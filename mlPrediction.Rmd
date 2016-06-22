@@ -41,6 +41,8 @@ This data is assessed using the __"classe"__ variable in the training dataset
 *  Validate to see which variables have enough useful data to use for prediction.  Using 95% as tolerance.
 
 ```{r}
+# Load packages required for prediction functionality
+library(caret)
 # remove first 7 vars
 train_df[1:7] <- list(NULL)
 test_df[1:7] <- list(NULL)
@@ -111,9 +113,9 @@ names(test_df)
 ```
 #### Prediction models
 Set PCA to reduce the dimension of the data.  Get to the important stuff using cross-validation (cv) method
+Tried "rf", svm" and "glm" offline.  Used "rf" with the high accuracy returns
 ```{r cache=TRUE}
-# Load packages required for prediction functionality
-library(caret)
+
 # Set seed to 1.  easy to remember
 set.seed(1)
 # Create training and cross-validation datasets
@@ -125,8 +127,30 @@ tcData <- trainControl(method = "cv", number = 5, verboseIter=FALSE , preProcOpt
 # Using random forest (rf) method as offline pre-processing check validates good accuracy
 myTrain_rf <- train(classe ~ ., data = myTrain, method = "rf", trControl=tcData)
 ```
-
-
+### Accuracy of training dataset
+The acuracy of the training dataset is 100%
+```{r}
+predTrain <- predict(myTrain_rf, myTrain)
+confusionMatrix(predTrain, myTrain$classe)
+```
+### Accuracy of cross-validation dataset
+The acuracy of the CV data 99+ percent
+```{r}
+predCV <- predict(myTrain_rf, cvTrain)
+confusionMatrix(predCV, cvTrain$classe)
+```
+#### Prediction
+```{r}
+predictionValues <- predict(myTrain_rf, test_df)
+predictionValues
+```
+#### Plot decision tree for graphic visualization - Plays well with random forest
+```{r}
+# plot data
+library(rpart.plot)
+plotData <- rpart(classe ~ ., data=myTrain, method="class")
+prp(plotData)
+```
 
 ### Contributions
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013
