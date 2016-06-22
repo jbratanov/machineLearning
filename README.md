@@ -1,2 +1,0 @@
-# machineLearning
-machine learning
