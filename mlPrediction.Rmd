@@ -43,8 +43,12 @@ This data is assessed using the __"classe"__ variable in the training dataset
 ```{r}
 # remove first 7 vars
 train_df[1:7] <- list(NULL)
-
-# remove columns which are NA, missing values or non-numeric using 95% tolerance
+test_df[1:7] <- list(NULL)
+##############################################
+# Pre-process training data 
+#remove columns which are NA, missing values
+# or non-numeric using 95% tolerance
+##############################################
 tolerance <- nrow(train_df) * .05
 colCnt <- ncol(train_df)-1
 listCnt=1
@@ -53,12 +57,9 @@ badColList <- list()
 # Remember not to change or delete "classe" variable
 for (i in 1:colCnt)
   {
-    print(i)
     if (colSums(is.na(train_df[i]))  > tolerance
        || sum(train_df[i] == "") > tolerance)
       {
-        print(i)
-        print(colnames(train_df[i]))
         badColList[listCnt] <- colnames(train_df[i])
         listCnt <- listCnt + 1
       }
@@ -71,8 +72,61 @@ for (i in 1:colCnt)
 # Drop list of columns not used
 train_df <- train_df[, !(names(train_df) %in% badColList)] 
 
+##############################################
+# Pre-process test data 
+#remove columns which are NA, missing values
+# or non-numeric using 95% tolerance
+##############################################
+tolerance <- nrow(test_df) * .05
+colCnt <- ncol(test_df)-1
+testlistCnt=1
+testbadColList <- list()
+# Loop and build list of columns which don't meet clean data criteria
+# Remember not to change or delete "classe" variable
+for (i in 1:colCnt)
+  {
+    if (colSums(is.na(test_df[i]))  > tolerance
+       || sum(test_df[i] == "") > tolerance)
+      {
+        testbadColList[testlistCnt] <- colnames(test_df[i])
+        testlistCnt <- testlistCnt + 1
+      }
+    else
+      {
+         # change columns we are keeping into numeric
+         test_df[,i] <- as.numeric(as.character(test_df[,i]))
+      }
+  }
+# Drop list of columns not used
+test_df <- test_df[, !(names(test_df) %in% testbadColList)] 
+
+
 
 ```
+#### Data to be used for prediction
+After data cleaning, the following variables will be used.
+```{r}
+names(train_df)
+names(test_df)
+```
+#### Prediction models
+Set PCA to reduce the dimension of the data.  Get to the important stuff using cross-validation (cv) method
+```{r cache=TRUE}
+# Load packages required for prediction functionality
+library(caret)
+# Set seed to 1.  easy to remember
+set.seed(1)
+# Create training and cross-validation datasets
+inTrain = createDataPartition(train_df$classe, p = 0.7, list=FALSE)
+myTrain = train_df[inTrain,]
+cvTrain = train_df[-inTrain,]
+
+tcData <- trainControl(method = "cv", number = 5, verboseIter=FALSE , preProcOptions="pca", allowParallel=TRUE)
+# Using random forest (rf) method as offline pre-processing check validates good accuracy
+myTrain_rf <- train(classe ~ ., data = myTrain, method = "rf", trControl=tcData)
+```
+
+
 
 ### Contributions
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013
